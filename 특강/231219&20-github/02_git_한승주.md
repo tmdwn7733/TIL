@@ -545,3 +545,9 @@ Fast-forward
  readme.md | 1 +
  1 file changed, 1 insertion(+)
 ```
+
+### 폴더/파일 삭제하는법
+0. git rm -rf {파일 및 폴더명} : 모두 삭제
+1. git rm -r --cached {파일 및 폴더명} : 원격 저장소에 있는것만 삭제
+2. git commit -m "commit 내용"
+3. git push -u origin master
