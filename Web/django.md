@@ -1,6 +1,7 @@
 # django
 프레임워크는 프랜차이즈처럼느낌 내가 쓰기는 편하지만 제약이 있음
 라이브러리는 원하는 것만 꺼내옰수 있어 자유도는 높지만 프레임워크처럼 쉽지는 않음
+[튜토리얼](https://docs.djangoproject.com/en/5.0/intro/tutorial03/#namespacing-url-names)
 
 준비물
 1. gitbash 설치
@@ -95,6 +96,7 @@ app을 master에 포워딩하는 방식
 
     {% endblock content %}
     ```
+- `'greeting/<str:name>/'` : url에서 ~~/한승주/ 처럼 name이란 변수를 문자열로 받겠다라는 의미 
 
 ## html간 자료를 주고 받기(project : 01_USER_INPUT)
 실습파일: form, utils
@@ -141,7 +143,7 @@ app을 master에 포워딩하는 방식
    - input.html의 method를 POST로 바꾸면 views.py에 request.post에 데이터가 저장됨
    - `{% csrf_token %}`을 input.html에 꼭 설정해줘야함
 
-## 데이터베이스 저장(02_MODEL)
+## 데이터베이스 저장(project : 02_MODEL)
 실습파일 : hospital
 우리가 데이터베이스를 쓰기 시작한 후부터 두가지 세상이 있음.
 - python - Django 세계 : python only
@@ -228,3 +230,73 @@ app을 master에 포워딩하는 방식
    p2.delete()
    ```
 
+## CRUD를 사용해 Web 기본 게시판 만들기(project : 02_MODEL)
+실습파일 : board
+### 어떻게 브라우저의 데이터가 이동될까?
+1. 사용자가 브라우저에 데이터를 입력
+   - 사용자가 웹 브라우저에서 게시판 페이지에 접속하면, 페이지에는 게시글을 작성할 수 있는 폼이 제공됨
+2. GET을 통해 VIEWS.PY에 받음 
+   - 사용자가 폼에 데이터를 입력하고 제출하면, 일반적으로 HTTP GET 요청이 발생됨
+   - 이 GET 요청은 Django 프레임워크에서 지정된 URL 패턴에 따라 views.py 파일 내의 특정 함수(뷰)로 전달함
+3. html문서를 통해 새로운 값을 보여줌
+   - 해당 뷰 함수는 데이터를 처리하고, 처리된 결과를 사용자에게 보여줄 HTML 페이지를 렌더링함
+   - HTML 페이지는 사용자가 입력한 내용과 함께 새로운 값을 포함하여 동적으로 생성됨
+   - 이 페이지는 다시 사용자의 브라우저로 전송되어 화면에 표시됨
+4. POST에 저장함
+   - 사용자가 게시글을 입력하고 '전송' 버튼을 누르면, 일반적으로 HTTP POST 요청이 생성됨
+   - 이 POST 요청은 마찬가지로 Django 프레임워크에서 지정된 URL 패턴에 따라 views.py 파일 내의 특정 함수(뷰)로 전달됨
+5. POST안의 데이터를 꺼내서 모델을 통해 DB안에 저장함
+   - 해당 뷰 함수는 POST 요청으로 전달된 데이터를 꺼내와서, 이 데이터를 기반으로 새로운 게시글을 생성함
+   - 이때, Django의 ORM(객체 관계 매핑)을 사용하여 데이터를 DB에 저장함
+   - 데이터를 저장하기 위해 모델명.objects.create()나 모델명()을 생성하고 변수를 할당한뒤 save() 메서드를 호출하여 데이터를 저장함
+6. 응답을 보냄
+   - 게시글이 성공적으로 DB에 저장되면, 사용자에게 어떤 응답을 보내주는데, 주로 새로운 게시글이 추가된 상태의 게시판을 보여줄 수 있음
+   - 이때, 일반적으로는 사용자를 새로 작성된 글의 상세 페이지로 **리다이렉트(redirect)**하는 것이 일반적
+     - `redirect` : 사용자가 요청한 작업을 완료한 후에 브라우저(url)을 다른 곳으로 보냄
+     - 예를 들어 글을 삭제한 후에는 페이지가 자동으로 홈으로 돌아가는것과 비슷함
+
+
+7. 수정, 삭제 페이지 작성
+   - 수정을 담당하는 함수와 삭제를 담당하는 함수를 views.py에 작성
+   - 수정, 삭제를 하기위해서는 특정 객체의 id가 필요함
+
+### 튜토리얼
+1. 다했는데 url중 단어하나를 바꿔야 하는 일이 생길 수 있음. 그래서 Django에서는 처음부터 url에 변수를 지정할 수 있음
+   > 즉, URL을 쓸 일이 있으면, `'<app_name>:<name>'`
+   - 위치 : app/urls.py
+   - app_name 지정
+   - path에 세번째 인자 지정 : name='views함수이름'
+   ```html
+   <!-- 예시1) board/create/  => 'board:create' -->
+   <form action="{% url "board:create" %}" method="POST">
+      =
+   <form action="/board/create/" method="POST">
+
+   <!-- 예시2) board/pk/edit/  => 'board:edit' article.pk -->
+   <a href="{% url "board:edit" article.pk %}">
+      =
+   <a href="/board/{{article.pk}}/edit/">
+   ```
+2. 각 상황에서의 사용기호를 잘 기억해야함
+   ||python|파일 or html|Django|설명|
+   |-|-|-|-|-|
+   |구분자(Separator)|.|/|:|파일의 경로|
+   |연결자(Delimiter)|,|스페이스바|스페이스바|데이터의 결합|
+
+### 실습
+1. 기본적인 파일 설정(마스터 templates, sqlite3, settings에 관한 내용은 위에 정리되어 있음)
+2. master url.py에서 app.urls 파일경로를 지정
+3. app.urls에서 CRUD를 할수 있수 있도록 경로(Path)를 지정해 동작을 수행하는 view.py 내부의 함수와 연결
+   -  CRUD 기능이 각각의 URL에 매핑되어 있어 게시글을 생성, 조회, 수정, 삭제할 수 있음
+4. views.py에서 웹요청(url)에 따라 동작할 함수를 정의
+   > 잠깐! 여기서 꼭 `from .models import Article`를 import 해줘야함. 이건 현재 views.py가 위치한 폴더내 models.py파일안에서 정의한 모델(Article)을 가져온다는 뜻
+   > 이렇게 해줘야 웹에서 받은 데이터를 DB에 저장하고 삭제하는 등 상호작용 할 수 있음
+   - CRUD를 할때 변수를 할당해 줘야 활용할 수 있음
+   - 수정, 삭제 버튼은 단일조회안에서 작업을 수행
+5. 각 함수에서 지정된 html 문서를 작업해 사용자에게 보여질 페이지를 생성함
+   - 꼭 views.py에 있는 모든 함수가 html을 가지고 있지 않음.
+   - redirect를 사용해 views내에서 자체적으로 작업을 하고 저장한뒤 경로를 바로 설정하는 경우도 있음(예, 게시글 수정하면 바로 수정된 게시글로 바로 보이는것) 
+    -> 어떻게 보면 무한굴레로 실습파일의 edit -> update -> detail-> edit으로 update의 url이 존재하는 것처럼 보이는데 막상 리턴값이 없고 바로 redirect로 detail로 가니 눈으로 board/pk/update를 확인할 수는 없다 
+- `<button onclick="">` : 삭제전 경고메세지
+- pk=pk : 특정 레코드 값을 찾을때 사용
+- `linebreaksbr` : 여러 줄로 입력한걸 나타나게 해줌꼭 앞에 `|` 넣어줘야하고 out.html에 지정
