@@ -164,12 +164,12 @@ app을 master에 포워딩하는 방식
 > 한줄요약 : model.py은 테이블을 정리하기 위해 쓰는것
 1. 해당 프로젝트를 runserver하면 db.sqlite가 생성됨
    - db.sqlite가 우리가 만든 테이블이 sql형식으로 세팅되어서 나올 곳
-2. python manage.py makemigrations `<app_name>`
+2. `python manage.py makemigrations <app_name>`
    - 테이블을 넘기기 위해서 스캐치를 먼저보기 위한 작업
    - 앱안에 migrations이 생성됨
    - 아직 테이블이아니라서 0001_initial.py로 스캐치를 확인할수 있음
      - id :  환자들을 구분할수 있는 확실한 키를 django가 자동으로 만들어줌
-3. python manage.py migrate `<app_name>`
+3. `python manage.py migrate <app_name>`
    - 스캐치를 보니 마음에 들어서 이제 테이블로 최종 생성
 4. pip install django_extensions 설치후 settings에 'django_extension'를 넣어줌
 5. 모든 장소에서 하는 일들은 터미널 즉, manage.py를 통해서 실행됨
@@ -326,7 +326,7 @@ app을 master에 포워딩하는 방식
 2. views.py에서 form을 활용
    1. 생성
       - `.is_valid()`을 사용해 폼이 유효한지 아닌지 유효성 검사를 진행
-      - 유효하면 저장
+      - 유효하면 **저장**
       - 유효하지 않으면 저장하지 않고 사용자가 새로 입력할 수 있도록 에러메세지와 함께 새페이지 제공 -> 참고로 에러메세지는 개발자가 설정하는것이 아니라 자동으로 표시됨
    2. 조회
       - 사실상 생성이 조회의 함수를 가져가서 쓰는것으로 조회가 있어야만 생성할 수 있음
@@ -335,3 +335,69 @@ app을 master에 포워딩하는 방식
    4. 삭제
 3. HTML에서 필요시 form을 렌더링
    - html에서 렌더링시 기입하는 {{ form }} 경우 views.py에서 전달한 폼 객체를 참조하는 것이기에 직접 import할 필요가 없음.왜냐면 views.py에서 이미 import가 되어있기때문!
+ 
+
+ ### 최종 작성법(Project: 02_MODEL)
+ 실습파일 : 기존 프로젝트(02_MODEL)에 앱들(board, hospital)을 재구성
+
+ 그냥 get으로 받으로 html로 주고 post로 받으면 검증하고난 뒤에 저장하는 방식으로 가는게 더 효율적
+ - def create를 작성할때 post를 먼저받고 else
+ - 혹은 elif로 get을 뒤에 받는게 살짝 순서로써 국룰
+   - 둘을 하나의 함수로 작성하면 'board:new'도 전부 'board:create'로 변경
+   - 접두사만 달라젔지 결국 이건 하나의 create에 new를 받고 다시 create하는 get과 post가 왔다갔다함
+
+- 참고로 new.html에서 action을 작성하지않고 method만 작성할때 현재 주소창 URL 그대로 사용해서 POST함
+   ```html
+   <!-- form 뒤에 action을 안넣으면 해당 페이지의 url을 자동으로 기입-->
+   <!-- 즉, 첫번째 코드와 두번째 코드는 결국 같은말 -->
+   <form action="{% url "board:create" %}" method="POST">
+   <form method="POST">
+   ```
+- form 태그로 작성할 시 `{% csrf_token %}`는 꼭 밑에 작성해 줘야함
+- form 안에 있는 button은 submit을 대체함함
+- `get_object_or_404()`는 오류 메세지를 보내줌: 왜냐면 사용자가 잘못입력해서 우리가 표시하지 못한다라는 것을 보여줘야함
+- `@require_safe, @require_http_methods(['GET', 'POST']), @require_POST`를 views.py의 함수 앞부분에 작성하여 get만 받을지 둘다받을 지 확실하게 작성
+
+> POST요청을 보내는 방법은 무조건 form에 method가 post여야만 post가 됨. 이걸제외한 모든건 전부 get방식인걸 잊지 말아야함
+
+
+## 1:N 관계(Project: 02_MODEL)
+실습파일: 기존 프로젝트(02_MODEL)에 앱들(board, hospital)을 재구성 + one_to_many
+
+테이블안에 너무많은 정보를 넣게 되면중복값도 많아지지만 특정조건때문에 결측치도 생기게 되어 테이블을 따로 관리하고 연관있는 id를 지정해서 연결해서 가져올 수 있음
+
+> 데이터 베이스는 정확성,일관성, 유효성이 유지되는 것을 말함. 
+>> 참조관계가 꼭 있어야함
+
+### 실습 
+0. 대부분의 작업은 지금까지 작업과 대부분 비슷함
+1. models.py 작업
+   - models.py에서 두개의 model을 만들고 한 모델을 다른 모델에서 key로 참조하는 방식을 사용
+   - company = models.ForeignKey(Company, on_delete=models.CASCADE)의 경우 company를 FK(ForeignKey) 즉, 외래키로 참조하겠으며 CASCADE는 만약 KEY가 삭제될시 키를 참조한 해당 모델 값도 자동으로 삭제한다는 의미
+   - company로 명명해도 테이블을 보면 company_id로 들어와 있는 것을 볼 수 있음
+2. views.py 작업
+   - 사실 댓글도 생성하는것과 마찬가지라 create 함수와 큰 차이가 없음. 그러나 딱 하나 차이가 있음
+   - 바로 내용을 받아 저장하지 않음
+     - comment = `form.save(commit=False)` 처럼 comment 인스턴스에 내용을 채우되, 저장 직전에서 멈춰라는 명령어를 제시
+     - 이후 댓글이 달린 게시글을 지정함
+3. 이후 html 작업도 대부분 비슷. 다만 `form 뒤에 {% csrf_token %}`작성하는 것은 절대 잊지 말것!
+
+## 사용자인증_회원가입, 로그인, 로그아웃(Project: 03_restart)
+실습파일: 03_restart
+
+> 회원의 앱은 따로 만드는 것이 국룰!
+>> 또한, 회원관리 관련된 것은 장고에서 공식적으로 accounts로 해라고 지정
+
+- 장고는 이미 회원관리를 잘하고 있기에 우리가 따로 테이블을 안만들어도 installapp에 있는 `auth`에 잘 있음. 하지만 우리가 만들지는 않아서 우리 눈에 실제로 보이지는 않음. 
+  - auth의 path : `from django.contrib.auth import auth`
+
+amdin.py에서 관리자가 할수 있는 여러 기능을 추가 할 수 있음
+model에 use를 추가하고 makemigrations를 한 뒤 migrate를 함
+
+앱이 달라도 다른 앱의 url을 가져올 수 있음
+
+.asp는 마진을 조금더 줘서 보기 편ㅅ하게 함
+
+signup에 login을 넣지 않으면 데이터베이스에 라스트로그인표시가 null로 나오지만 한꺼번에 회원가입과 로그인을 같이하려면 그
+
+음 원래 시작할때 model에 db뼈대를 만들고, forms 에 유효성 검사 modelform 만들고, urls랑 views에서 데이터를 저장했는데, 이번 accounts 같은 경우엔 장고에서 이미 만들어놓았던..? model 이랑 modelform 도 있어서 딱히 model 이랑 form 에 아무 말도 안적은거다... 라고 생각해도 될까요 ??
