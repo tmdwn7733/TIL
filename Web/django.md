@@ -379,10 +379,11 @@ app을 master에 포워딩하는 방식
    - 사실 댓글도 생성하는것과 마찬가지라 create 함수와 큰 차이가 없음. 그러나 딱 하나 차이가 있음
    - 바로 내용을 받아 저장하지 않음
      - comment = `form.save(commit=False)` 처럼 comment 인스턴스에 내용을 채우되, 저장 직전에서 멈춰라는 명령어를 제시
+       - 왜냐면 아직은 다 채우지 않아서 저장은 하면 안됨.
      - 이후 댓글이 달린 게시글을 지정함
 3. 이후 html 작업도 대부분 비슷. 다만 `form 뒤에 {% csrf_token %}`작성하는 것은 절대 잊지 말것!
 
-## 사용자인증_회원가입, 로그인, 로그아웃(Project: 03_restart)
+## 사용자인증_회원가입, 로그인, 로그아웃 및 상황별 권한부여여(Project: 03_restart)
 실습파일: 03_restart
 
 > 회원의 앱은 따로 만드는 것이 국룰!
@@ -391,13 +392,34 @@ app을 master에 포워딩하는 방식
 - 장고는 이미 회원관리를 잘하고 있기에 우리가 따로 테이블을 안만들어도 installapp에 있는 `auth`에 잘 있음. 하지만 우리가 만들지는 않아서 우리 눈에 실제로 보이지는 않음. 
   - auth의 path : `from django.contrib.auth import auth`
 
-amdin.py에서 관리자가 할수 있는 여러 기능을 추가 할 수 있음
-model에 use를 추가하고 makemigrations를 한 뒤 migrate를 함
+- amdin.py에서 관리자가 할수 있는 여러 기능을 추가 할 수 있음
+- models.py에 user를 추가하고 makemigrations를 한 뒤 migrate를 함
+  - 이때 옵션선택을 하라고 하는데 전부 1로 선택
+  - 하지만 게시글이 아무것도 없는경우 옵션선택이 뜨지 않고 바로 테이블이 생성됨. 하지만 결국 결과는 옵션을 1로 선택한 것과 같은 것처럼 나옴
+- `Python manage.py createsuperuser` : 중간 관리자 생성
 
-앱이 달라도 다른 앱의 url을 가져올 수 있음
+- 앱이 달라도 다른 앱의 url을 가져올 수 있어서 연동할 수 있음
 
-.asp는 마진을 조금더 줘서 보기 편ㅅ하게 함
+- .asp는 마진을 조금더 줘서 보기 편ㅅ하게 함
 
-signup에 login을 넣지 않으면 데이터베이스에 라스트로그인표시가 null로 나오지만 한꺼번에 회원가입과 로그인을 같이하려면 그
+- signup에 login을 넣지 않으면 데이터베이스에 라스트로그인표시가 null로 나오지만 한꺼번에 회원가입과 로그인을 같이하려면 signup 안에 logind을 기입
 
-음 원래 시작할때 model에 db뼈대를 만들고, forms 에 유효성 검사 modelform 만들고, urls랑 views에서 데이터를 저장했는데, 이번 accounts 같은 경우엔 장고에서 이미 만들어놓았던..? model 이랑 modelform 도 있어서 딱히 model 이랑 form 에 아무 말도 안적은거다... 라고 생각해도 될까요 ??
+- 즉, 원래 시작할때 model에 db뼈대를 만들고, forms 에 유효성 검사 modelform 만들고, urls랑 views에서 데이터를 저장했는데, 이번 accounts 같은 경우엔 장고에서 이미 만들어놓았던..? model 이랑 modelform 도 있어서 딱히 model 이랑 form 에 아무 말도 안적은 것
+
+---
+- `@login_required` : 로그인을 해야만 할 수 있도록 해야함. 404 오류 코드가나옴
+- 데코레이터들의 순서는 상관이 있음 
+  - @login_reauired @require_POST의 순서는 로그인을 먼저하게하고 post인 값들만 받겠다라는 것것
+- comment.user만 써도 충분히 user의 name이 나타남
+
+# M:N 관계((Project: 03_restart))
+실습파일: 03_restart
+
+1. User - Article - Comment 모델의 관계
+2. Profile 페이지
+3. 권한(작성자 == 요청보낸사용자)에 따라서 동작 구분
+4. HTML 에서 UI 들 변경(사용자 클릭, 프로필페이지에서 작성글/댓글, 보기)
+5. M:N 관계의 핵심 (연결테이블) 및  M:N 관계로 표현해야하는 개념들이 어떤게 있는지
+ **ERD** : sql 참고
+- 유투브 좋아요 기능만 봐도 한 동영상에 다수의 좋아요가 눌러짐
+6. models.py 코드들
