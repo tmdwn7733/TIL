@@ -1,6 +1,6 @@
 # 명령어(CLI, MYSQL 모두 사용가능)
 실습파일: KDT/SQL
-참고교재: 고양이사람
+참고교재: SQL로 맛보는 데이터 전처리 분석
 - SQL 고정 명령어는 대문자로, 내가 만든 이름은 소문자
     - 모두 소문자로 적어도 동작은 하나, Rule 을 지키자.
     - 띄어쓰기와 줄 바꿈은 적절히 잘
@@ -165,3 +165,27 @@ CREATE TABLE uniq_dogs (
    - 하지만 만약에 `%` 특수기호가 들어간 책을 찾으면?
      - `\`를 활용
      - `SELECT * FROM books WHERE title LIKE '%\%%'; ` %가 들어간 책제목 검색
+
+## django에서 MYSQL 연동해서 관리하기(crawling해서 수집된 데이터를 django에서 활용하기)
+설치해야할것 : `pip install mysqlclient`
+
+1. (선택) MYSQL 홈에서 새로운 connections 파일 생성하기
+   - 이때 port 번호는 0에서 1024번까지는 건들이지 않기. 왜냐면 이미 점유되어 있을 확률이 높음 
+2. MYSQL에서 django에 연동할 DB 생성하기
+    ```SQL
+    CREATE DATABASE django_dataset
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+    ```
+3. settings.py의 DATABASES에서 MYSQL을 연결할수 있게 설정
+4. 설정완료 후 `python manage.py migrate`실행   
+   성공적으로 실행되면 MYSQL workbench에 성공적으로 테이블이 올라간것을 볼 수 있음
+5. 앱(mapapp) 생성
+6. 크롤링해서 csv에 데이터 저장
+7. mapapp의 models.py에 CSV에 저장한 데이터 속성을 참고해 모델 지정후 makemigrations -> migrate 실행
+8. MYSQL에 테이블이 들어온것을 확인할 수 있음
+   - 아직 데이터가 없음. 걱정 ㄴㄴ
+9. MYSQL에서 생성된 테이블 우클릭 Data Table Import Wizard 클릭 후 크롤링에서 저장한 CSV를 import      
+   - 그리고 계속 NEXT 클릭하면 테이블에 크롤링한 데이터가 들어온것을 볼 수 있음
+   <p align="center"><img src="../이미지/django06.png"></p>
+10. admin.py에서 관리자 계정만들고 데이터 관리하기

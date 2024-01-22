@@ -361,7 +361,7 @@ app을 master에 포워딩하는 방식
 > POST요청을 보내는 방법은 무조건 form에 method가 post여야만 post가 됨. 이걸제외한 모든건 전부 get방식인걸 잊지 말아야함
 
 
-## 1:N 관계(Project: 02_MODEL)
+## 게시글- 댓글로 표현한 1:N 관계(Project: 02_MODEL)
 실습파일: 기존 프로젝트(02_MODEL)에 앱들(board, hospital)을 재구성 + one_to_many
 
 테이블안에 너무많은 정보를 넣게 되면중복값도 많아지지만 특정조건때문에 결측치도 생기게 되어 테이블을 따로 관리하고 연관있는 id를 지정해서 연결해서 가져올 수 있음
@@ -384,42 +384,113 @@ app을 master에 포워딩하는 방식
 3. 이후 html 작업도 대부분 비슷. 다만 `form 뒤에 {% csrf_token %}`작성하는 것은 절대 잊지 말것!
 
 ## 사용자인증_회원가입, 로그인, 로그아웃 및 상황별 권한부여여(Project: 03_restart)
-실습파일: 03_restart
+실습파일: 03_RESTART
 
 > 회원의 앱은 따로 만드는 것이 국룰!
->> 또한, 회원관리 관련된 것은 장고에서 공식적으로 accounts로 해라고 지정
+>> 또한, 회원관리 폴더는 장고에서 공식적으로 accounts로 폴더명을 명명하라고 지정
 
-- 장고는 이미 회원관리를 잘하고 있기에 우리가 따로 테이블을 안만들어도 installapp에 있는 `auth`에 잘 있음. 하지만 우리가 만들지는 않아서 우리 눈에 실제로 보이지는 않음. 
-  - auth의 path : `from django.contrib.auth import auth`
+### 작업
+0. settings.py 작업
+   - 장고는 이미 회원관리를 잘하고 있기에 우리가 따로 테이블을 안만들어도 installapp에 있는 `auth`에 잘 있음. 하지만 우리가 만들지는 않아서 우리 눈에 실제로 보이지는 않음. 
+     - auth의 path : `from django.contrib.auth import auth`
+1. board의 admin.py작업
+   - amdin.py에서 관리자가 할수 있는 여러 기능을 추가 할 수 있음
+2. board의 models.py 작업
+   - models.py에 user를 추가
+   - makemigrations를 한 뒤 migrate을 appname 없이 진행
+     - 프로젝트 내의 모든 앱에 대한 마이그레이션을 만들고 적용하기위해 appname을 지정하지 않음
+     - 이때 옵션선택을 하라고 하는데 전부 1로 선택
+     - 하지만 게시글이 아무것도 없는경우 옵션선택이 뜨지 않고 바로 테이블이 생성됨. 하지만 결국 결과는 옵션을 1로 선택한 것과 같은 것처럼 나옴
+3. board의 forms.py 작업
+   - `fields = '__all__'`을 사용할 경우 회원가입된 사용자의 아이디를 선택해서 글을 작성하는 일이생길 수 있음. 이에 특정 필드를 쓰지 않겠다라는 코드를 작성해야함
+      ```python
+      class ArticleForm(forms.ModelForm):
+      
+      class Meta:
+         model = Article
+         # 아래 필드들은 안쓰겠다.
+         exclude = ('user', )
 
-- amdin.py에서 관리자가 할수 있는 여러 기능을 추가 할 수 있음
-- models.py에 user를 추가하고 makemigrations를 한 뒤 migrate를 함
-  - 이때 옵션선택을 하라고 하는데 전부 1로 선택
-  - 하지만 게시글이 아무것도 없는경우 옵션선택이 뜨지 않고 바로 테이블이 생성됨. 하지만 결국 결과는 옵션을 1로 선택한 것과 같은 것처럼 나옴
-- `Python manage.py createsuperuser` : 중간 관리자 생성
+         # 아래 필드들을 쓰겠다.
+         # fields = ('title', 'content',)
+      ```
+4. `Python manage.py createsuperuser` : 중간 관리자 계정 생성(패스워드는 쳐도 보이지 않는것이 정답이니 그냥 아무 거나 치고 엔터)
+5. views.py 작업
+   - 앱이 달라도 다른 앱의 url을 가져올 수 있어서 연동할 수 있음
+   - 데코레이터들의 순서는 상관이 있음 
+   - signup에 auth_login을 넣지 않으면 데이터베이스에 라스트로그인표시가 null로 나오지만 한꺼번에 회원가입과 로그인을 같이하려면 signup 안에 logind을 기입
+   - login은 다른곳에서도 함수로 많이 사용해 재귀함수첨럼 될 수 있음. 이에 새롭게 이름을 부여하는 것을 추천
+     - `from django.contrib.auth import login as auth_login, logout as auth_logout`
+   - 장고의 구성요소의 인증요소의 데코레이터로 로그인을 해야만 쓸수 있는 함수만 @login_required를 기입
+     - `from django.contrib.auth.decorators import login_required`
+     - 그렇지 않은경우 404 오류 코드가나옴 
+     - @login_reauired @require_POST의 순서는 로그인을 먼저하게하고 post인 값들만 받겠다라는 것
+   - order_by를 활용하여 pk가 큰것부터 보여줄 수도 있음
+6. .html 작업
+   - {{ form.as_p }} 에서 `.as_p`는 마진을 조금더 줘서 읽기 쉬운 형태로 표현. 사실상 <p></p>의 역할 
 
-- 앱이 달라도 다른 앱의 url을 가져올 수 있어서 연동할 수 있음
+> model에서 db를 만들고 forms에서 유효성 검사 modelform을 만들고 urls와 views에 데이터를 저장. 추가로 accounts는 django에서 기본으로 제공해주는 model 이랑 modelform도 있어서 딱히 model 이랑 form에 따로 명시해 주지 않아도 makemigration과 migrate해도 table이 나타남
 
-- .asp는 마진을 조금더 줘서 보기 편ㅅ하게 함
 
-- signup에 login을 넣지 않으면 데이터베이스에 라스트로그인표시가 null로 나오지만 한꺼번에 회원가입과 로그인을 같이하려면 signup 안에 logind을 기입
+## 게시글-좋아요로 표현한 M:N 관계(Project: 03_RESTART)
+실습파일: 03_RESTART를 재구성 + many_to_many
 
-- 즉, 원래 시작할때 model에 db뼈대를 만들고, forms 에 유효성 검사 modelform 만들고, urls랑 views에서 데이터를 저장했는데, 이번 accounts 같은 경우엔 장고에서 이미 만들어놓았던..? model 이랑 modelform 도 있어서 딱히 model 이랑 form 에 아무 말도 안적은 것
+- django가 ORM을 써서 SQLlite를 사용하는 하는 것과 마찬가지로 데이터가 많아지고 다양해질수록 관계는 더욱 복잡해 연결점이 생길 수 밖에 없음
+- 기존 작업과 큰 차이는 없음
+  
+### 작업
+1. models.py
+   - ManyToManyField를 사용해 M:N 관계를 가지는 데이터 테이블을 형성함
+   - 이때 각 USER와 Class명이 어디에 어떻게 들어가는지 잘 파악해야함
+      <p align="center"><img src="../이미지/django05.png"></p>
+2. forms.py
+   - 여기서도 exclude에 like_users를 추가하여 서버에 보이지 않게 해줘야함
+3. views.py
+   - 두가지 방식이 있음. 첫번째꺼가 이번에는 더 빠르지만은 결국에 데이터가 많아지면은 두번째 방식이 더 효율적으로 일을 하게 됨
+   - 이는 파이썬은 결국 두루두루 다루는 것이고 sql은 본인이 해야할 일은 빠르게 해치우는 것으로 앞으로도 코드를 작성할때 각 코드가 해야할일이 파이썬의 영역인지 sql의 영역인지 확인을 하고 코드를 작성해 주는것이 좋음
+     - user in article.like_users.all() => 파이썬이 일함 (in 연산자) 
+     - article.like_users.filter(pk=user.pk).exists() => DB가 일함 (SQL)
 
----
-- `@login_required` : 로그인을 해야만 할 수 있도록 해야함. 404 오류 코드가나옴
-- 데코레이터들의 순서는 상관이 있음 
-  - @login_reauired @require_POST의 순서는 로그인을 먼저하게하고 post인 값들만 받겠다라는 것것
-- comment.user만 써도 충분히 user의 name이 나타남
 
-# M:N 관계((Project: 03_restart))
-실습파일: 03_restart
+## django에서 MYSQL 연동해서 관리하기(crawling해서 수집된 데이터를 django에서 활용하기)
+설치해야할것 : `pip install mysqlclient`
 
+1. (선택) MYSQL 홈에서 새로운 connections 파일 생성하기
+   - 이때 port 번호는 0에서 1024번까지는 건들이지 않기. 왜냐면 이미 점유되어 있을 확률이 높음 
+2. MYSQL에서 django에 연동할 DB 생성하기
+    ```SQL
+    CREATE DATABASE django_dataset
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+    ```
+3. settings.py의 DATABASES에서 MYSQL을 연결할수 있게 설정
+4. 설정완료 후 `python manage.py migrate`실행   
+   성공적으로 실행되면 MYSQL workbench에 성공적으로 테이블이 올라간것을 볼 수 있음
+5. 앱(mapapp) 생성
+6. 크롤링해서 csv에 데이터 저장
+7. mapapp의 models.py에 CSV에 저장한 데이터 속성을 참고해 모델 지정후 makemigrations -> migrate 실행
+8. MYSQL에 테이블이 들어온것을 확인할 수 있음
+   - 아직 데이터가 없음. 걱정 ㄴㄴ
+9. MYSQL에서 생성된 테이블 우클릭 Data Table Import Wizard 클릭 후 크롤링에서 저장한 CSV를 import      
+   - 그리고 계속 NEXT 클릭하면 테이블에 크롤링한 데이터가 들어온것을 볼 수 있음
+   <p align="center"><img src="../이미지/django06.png"></p>
+10. admin.py에서 관리자 계정만들고 데이터 관리하기
+
+### 비밀번호를 넣어야하는데 이파일들을 꼭 github에 넣어야 할때 비밀번호 비식별화 하는법
+1. `pip install python-dotenv` 설치
+2. 업로드해야하는 폴더에 .env .gitignore 파일 생성
+3. .env 파일에 원래비밀번호를 대체해서 git에 올라갈 값을 설정
+4. 프로젝트 파일에 작성해야하는 비밀번호를 대체비밀번호로 작성
+5. .gitignore에 .env를 작성
+   - 그러면 나중에 파일을 업로드하면 .env는 무시한채 다른 파일들만 올라가서 외부인이 원래비밀번호를 보지 못함
+   - 추가로 프로젝트 내에 많은 비밀번호가 담긴파일이 있다면 [강사님 추천 링크](https://gitignore.io)를 활용해 예를 들어 django를 입력해서 나오는 값을 전부 복사해서 .gitignore에 붙여넣기
+
+## 지금까지 Django로 한 것들
+0. Djanog의 기본적인 문법
 1. User - Article - Comment 모델의 관계
 2. Profile 페이지
 3. 권한(작성자 == 요청보낸사용자)에 따라서 동작 구분
 4. HTML 에서 UI 들 변경(사용자 클릭, 프로필페이지에서 작성글/댓글, 보기)
 5. M:N 관계의 핵심 (연결테이블) 및  M:N 관계로 표현해야하는 개념들이 어떤게 있는지
- **ERD** : sql 참고
-- 유투브 좋아요 기능만 봐도 한 동영상에 다수의 좋아요가 눌러짐
 6. models.py 코드들
+7. 외부 자료를 django로 관리하는법
