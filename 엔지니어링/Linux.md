@@ -141,152 +141,6 @@ git bash에서 .ssh로 이동한 다음 aws 퍼블릭 코드(ssh -i "V-lab.pem" 
      - 즉, -9 시그널은 언제든지 강제 종료가 되기 때문에 어플리케이션이 작업 중이던 내용을 다 처리하지 못하고 종료되지만, -15 시그널은 개발자가 시그널을 처리하기 위한 로직(코드)을 구현할 수 있음
    
 
-# 프로그램 설치
-## 파이썬 및 주피터 노트북 개발환경 구축
-[참고링크](https://radial-fighter-931.notion.site/Python-c219574fd69e431f8c5ce80490ebf4f2)
-aws가 실행된 환경(ubuntu@ip-172-31-11-147:~$ )에서 실행
-1. 미니콘다 설치 -> 아래 코드 실행
-   - wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-2. 미니콘다 설치를 다하면 bash파일을 실행
-   - bash Miniconda3-latest-Linux-x86_64.sh
-   - 약관 동의가 나오는데 계속 엔터키 누르기(혹은 q누르면 맨밑으로 내려감)
-   - yes/no 질문에 전부 yes 누르기
-3. sourch를 통해 .bashrc불러오기
-   - ubuntu@ip-172-31-33-75:~$ source ~/.bashrc
-   - 실행 결과 아래와 같이 이름이 바뀜
-     - (base) ubuntu@ip-172-31-11-147:~$
-4. (base) ubuntu@ip-172-31-11-147:~$에서 python 위치 확인해보고 잘되었는지 확인
-   - which python
-5. 이제 juypyter Notebook 설치 하기전 가상환경 실행하기
-   - (base) ubuntu@ip-172-31-11-147:~$ conda create -n spark-env python=3.8
-     - yes/no에서 yes 누르기
-6. 설치한 후 spark-env 실행
-   - (base) ubuntu@ip-172-31-11-147:~$ conda activate spark-env
-7. 6번을 실행하면 (spark-env) ubuntu@ip-172-31-11-147:~$ 으로 바뀜. 여기서 jupyter notebook 설치
-   - pip install notebook==6
-8. 파이썬 실행하기
-   - (spark-env) ubuntu@ip-172-31-11-147:~$ python
-8. 파이썬이 실행되면 >>>가 뜨는데 거기에 아래 코드 실행하기
-   - ``` >>> from notebook.auth import passwd```
-   - ``` >>> passwd()```
-   - 비밀번호 입력하기
-   - 비밀번호 설정을 완료하면 아래코드가 나오는데 메모해두기
-     - sha1:90d53d84d759:e32d5cd277594a998216f02a1ee012f9114b4539
-9. 파이썬 끄기 : `ctrl + D`
-    - 파이썬 종료하면 다시 아래 이름으로 나와짐
-      - (spark-env) ubuntu@ip-172-31-11-147:~$ 
-10. 아래 코드 실행
-    - jupyter notebook --generate-config
-11. 10번이 성공하면 아래 코드 실행해서 파일을 열어주기
-    - sudo vim /home/ubuntu/.jupyter/jupyter_notebook_config.py
-      - 참고로 window10Rkwlsms
-12. 파일이 열린것을 확인한 후 `i`를 입력해 INSERT 모드로 만들어주고 C = get_config()아래에 아래 코드 입력
-    ```
-    c.NotebookApp.password = u'argon으로 시작하는 비밀번호'
-    c.NotebookApp.ip = 'EC2 내부 IP'
-    c.NotebookApp.notebook_dir = '$your_notebook_root_dir_path'
-    ```
-    - 여기서 아래 처럼 몇몇 정보를 바꿔야함
-      - argon으로 시작하는 비밀번호 = 과정 8번에 메모한 코드 넣기 
-      - EC2 내부 IP = 내 인스턴스 프라이빗 IPv4 주소 넣기
-      - 
-    ```
-    c.NotebookApp.password = u'sha1:90d53d84d759:e32d5cd277594a998216f02a1ee012f9114b4539'
-    c.NotebookApp.ip = '172.31.11.147'
-    c.NotebookApp.notebook_dir = '/home/ubuntu/working'
-    ```
-13. 다하면 esc버튼 누르고 :wq 입력해서 벗어나기
-14. 아직 우린 working 파일이 없어서 만들어 주기
-    - mkdir working
-15.  jupyter notebook 서버를 실행
-    - jupyter notebook --allow-root
-      - 실행하다면 노란색 뭐가 뜨는데 그냥 무시 ㄱㄱ
-16. 끝!
-
-### 설치한 노트북 입력해보기
-- 기존에는 노트북에서 실행해서 local/host888? 같은걸로 주피터노트북을실행을 했다면
-- 이제는, 노트북서버를 ec2에 접속을 할 수 있게 퍼블릭 아이피, 포트번호를 사용
-1. 구글 크롬 새창에 `퍼블릭 IPv4 DNS` + `:8888` 입력
-2. 비밀번호 입력 하면 주피터 화면이 잘 나옴!
-
-## 인스턴스 내용
-- 보안
-ec2에 접근하기 위해서는 .pem 파일이 필요하지만,
-ec2에서 만든 서버에는 .pem이 없어도 접근할 수 있음
-
-## Java 개발환경 구축
-- 대부분의 빅데이터 툴이 Java기반으로 되어있어 해보는 것을 추천
-- `(spark-env) ubuntu@ip-172-31-11-147:~$` 환경에서 시작!
-1. 자바 설치전 업데이터 먼저해주기
-   - sudo apt-get update
-   - sudo apt-get upgrade
-     - yes 입력해주기
-2. OpenJDK 8 실행 설치
-   - sudo apt-get install openjdk-8-jdk -y
-3. `java -version`을 입력하여 자바가 잘 설치되었는지 확인
-   - 아래 결과가 나오면 잘된거임
-    ```
-    openjdk version "1.8.0_362"
-    OpenJDK Runtime Environment (build 1.8.0_362-8u372-ga~us1-0ubuntu1~20.04-b09)
-    OpenJDK 64-Bit Server VM (build 25.362-b09, mixed mode)
-    ```
-4. `readlink -f $(which java)`를 입력해 실제 자바 설치 위치를 확인
-   - which 함수를 사용해 java의 경로를 찾음
-     - /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
-   - 이 경로를 복사해서 환경 변수에 등록하기
-5. 환경변수를 등록하기 위해 `vim ~/.bashrc`를 실행
-6. 새로운 창이뜨면 shift + g를 해서 맨아래칸으로가서 i를 입력해 INSERT환경으로 바꿔 아래 환경변수를 입력해주기 
-    ```
-    # JAVA_HOME
-    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
-    export PATH=$PATH:$JAVA_HOME/bin
-    ```
-   - JAVA_HOME이 환경변수로 대문자로해줌
-     - 예를 들어 하둡을 깔면은 HADOOP_HOME
-     - 스파크를까렴 SPARK_HOME으로 환경변수 입력
-7. 입력후 `ESC`를 눌러 명령어 모드로  진입한 후 `:wq`를 누르고 나오기
-8. 가상환경에서 `echo $JAVA_HOME`을 누르면 아무런 창이 뜨지않음. 이에 `source ~/.bashrc`를 입력해  (base) ubuntu@ip-172-31-11-147:~$의 환경으로 바꾼뒤 다시 `echo $JAVA_HOME`를 입력하면 자바 경로가 잘 설정된것을 볼 수 있음
-    <p align="center">
-      <img src="../이미지/Linux01.png">
-   </p>
-```
-[번외]
-echo는 단순히 출력을 하겠다는 명령어 이기 때문에 .bashrc에 기록된 내용 말고 다른 쪽에 있는 환경변수나 다른 값들도 확인하는 것이 가능합니다~!
-
-그런데 기본적으로 대부분의 환경변수는 bashrc에 기록하기 때문에 echo로 보는 환경변수는 대부분 .bashrc에 있는 것이라고 생각하면 될 것 같아요!
-```
-
-## Visual Studio Code 연동하기
-이건 충분히 강사님 설명잘되어 있어서 아래 링크 참고하기    
-[참고](https://radial-fighter-931.notion.site/AWS-2b3e5feb815e45e5b799dd7e332d0db8#faff7bc84b8a40b08ada86084e12f112)
-
-1. Remote - SSH, Remote -SSH: Editing Configuration Files 확장 모듈을 설치
-2. 왼쪽 밑 >< 파란색 아이콘 클릭
-3. connet to Host 클릭
-4. configure SSH Hosts 클릭
-5. 맨위 C:\Users\user\/ssh\config 클릭
-6. config화면이 뜨면 기존에 있는 화면 지우고 새로 입력
-   ```
-   Host 커넥션이름(아무거나 지정해도됩니다. 단, 띄어쓰기는 하지마세요)
-    HostName AWS Public IP 주소
-    User ubuntu
-    IdentityFile ~/.ssh/key파일이름.pem
-   ```
-   - 위의 내용을 아래처럼 입력
-   ```
-   Host AWS_MULTI
-    HostName ec2-3-114-30-206.ap-northeast-1.compute.amazonaws.com
-    User ubuntu
-    IdentityFile ~/.ssh/V-lab.pem
-   ```
-   - 다하면 저장
-7. 다시 왼쪽 밑 >< 파란색 아이콘 클릭
-8. connet to Host 클릭
-9. 새로 뜬 AWS_MULTI 클릭
-10. 새로운 창이 뜨고 LINUX 클릭
-11. 성공적으로 연결이 된 후 파일 목록에서 Open Folder를 눌러보면 다음 처럼 원격 연결된 ec2의 디렉토리 목록을 확인할 수 있음
-12. 끝!
-
 # 분산 시스템
 > 여러대의 컴퓨터를 사용!
 ## 기본특징
@@ -321,3 +175,20 @@ data warehouse는 데이터의 최소한의 정리만 하는것으로 none값을
 
 요즘 하둡은 데이터 저장소이기에 툴간의 연결다리? 빅데이터 시스템을 하둡기반으로 구축하는 정도로만 다룸.
 즉, 하둡을 해본적이 있냐라는 질문은 하둡기반응로 빅데이터 분석 프로젝트를 해봤냐라는 질문으로 생각하면 됨
+
+## Hadoop
+### 하둡의 Master/Worker의 체계가 중요
+
+### 하둡의 변천사 알아보기
+- haddop1의 구조
+- haddop2
+   현실적인 빅데이터의 분석의 구조라 할수 있음
+   -  네임노드를 활성화 시켰음. 하지만 활성화할수 잇는 건 하나이기에 standy와 active로 이중관리를 햇음
+   -  사장님도 관리를 했음. 또한 사장님이 고객님과 얘기만 하고 모니터링 할수 있는 비서역할(YARN)이 생김. 이 비서가 스케쥴링까지 담당해주면서 이러한 NAME NODE가 여유로워짐
+- haddop3
+  - 크게 바뀐건 없고 haddop2에서 기능이 몇개 추가된것
+  - Java 1.8버전을 지향
+    - 1.7버전은 객체지향 프로그래밍을 지원. 즉 레고처럼 하나의 기능을 사용하기 위해 쓰잘데기 없이 class를 만들어야하는 쓸모없는 레고조각이 많아짐
+    - 1.8버전부터는 lambda식이 추가되면서 함수형 프로그래밍이 가능해짐. 그래서 쓸데없는 class없이 바로 필요한 함수를 넣을수 있음. 
+
+#
