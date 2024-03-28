@@ -997,4 +997,4 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
 6. 새로운 Bash창 오픈
 7. 1~3번과정 다시하기
 8. (spark-env)환경에서 `jupyter notebook --allow-root`실행
-9. 구글 탭에  `aws 퍼블릭dns:8888`을 입력해 쥬피터노트북키기
+9. 구글 탭에  `aws 퍼블릭dns:8888`을 입력해 쥬피터노트북키기cd
