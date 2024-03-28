@@ -500,7 +500,9 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
 
 ## EFK
 `(base) ubuntu@ip-172-31-11-147:~$`에서 시작
-### 
+
+### Fluentd로 로그 파싱하고 보내기
+#### fluentd 설치하기
 1. Fluentd 설치
    ```
    sudo apt update
@@ -523,7 +525,7 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
 5. Process종료
    - `pkill -f fluentd`
 
-### 실습용 log generator
+#### 실습용 log generator
 1. Log Generator 설치
    - `mkdir loggen && cd loggen`
    - `wget https://github.com/mingrammer/flog/releases/download/v0.4.3/flog_0.4.3_linux_amd64.tar.gz`
@@ -556,13 +558,13 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
 12. `ls`를 통해 잘 있는지 확인
 13. 아파치도 json처럼 날짜 바꿔주기
 
-### Fluentd로 로그 파일 읽기
+#### Fluentd로 로그 파일 읽기
 - 로그로 필요한 정보를 아래처럼 등록해 할 수 있음
    <p align="center">
       <img src="../이미지/program down02.png">
    </p>
 
-#### json 형식의 로그를 수집
+##### json 형식의 로그를 수집
 - 대부분 특히 초보자들은 json로그의 형식을 따름
 1. `vi fluent-json.conf`를 이용해 fluent 폴더 내 설정파일 생성
 2. 아래 코드를 설정에 입력
@@ -590,7 +592,7 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
 3. 작성 완료후 아래 명령어를 실행
    - `fluentd -c ./fluent-json.conf -vv`
 
-#### regex형식의 로그파일(아파치로 하는 경우)
+##### regex형식의 로그파일(아파치로 하는 경우)
 - 정규식을 사용하기에 정규식을 확인하기(https://regex101.com/)
 1. `vi fluent-regex.conf`를 이용해 fluent 폴더 내 섯정파일 생성
 2. 아래 코드를 설정에 입력
@@ -619,7 +621,7 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
 3. 아래 명령어를 이용해 실행
    -`fluentd -c ./fluent-regex.conf -vv `
 
-### 필터링 하기
+#### 필터링 하기
 - 어떠한 특정한 값을 제거할 때 사용
 - 로그 수집을 할 수 있도록 해보기
 - 필터를 하면 position이 새로 생성됨
@@ -684,6 +686,7 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
 - "filter"는 순서가 중요합니다. 만약 "match"보다 뒤에 오면 해당 "match"에는 적용되지 않습니다. "filter"끼리도 선언된 순서대로 적용됩니다.
 
 ### Opensearch(Elasticsearch)로 로그 저장하기
+#### Opensearch 설치하기
 - 엘라스틱서치는 파일안쪽의 텍스트를 빨리 찾아주는 기능
 - 서치를 할때 RAM에서 가져오는게 HDD에서 가져오는것보다 훨빠름. 다만, 시작할때 통으로 가져오는 것이기에 용량이 크면은 조금 느려질 수 있음
 - (base) ubuntu@ip-172-31-11-147:~/fluent$에서 하기
@@ -709,10 +712,10 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
    - 저장하고 나와서 `source ~/.bashrc`실행
    - `echo $OPENSEARCH_HOME`를 실행해서 잘 설치되었는지 확인
 
-#### OpenSearch 시스템 세팅
+##### OpenSearch 시스템 세팅
 이건 하지않음. 나중에 우린 스파크도 할거라서 그냥 참고용으로만 보기. 만약에 나중에 엘라스틱서치전용으로 컴퓨터를 하면은,, 하던가 정도?
 
-#### 설정
+##### 설정
 (base) ubuntu@ip-172-31-11-147:~$에서 하기
 1. opensearch.yml 파일을 열어주기
    - `vi $OPENSEARCH_HOME/config/opensearch.yml`
@@ -726,7 +729,7 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
    - `export OPENSEARCH_JAVA_HOME=$OPENSEARCH_HOME/jdk`
    - 만약 매번 등록하는게 귀찮으면 그냥 환경변수에 넣어주면 됨
 
-#### plugin 설치하기
+##### plugin 설치하기
 밖에서 가져온거를 내꺼에 끼워넣는것.
 1. 플러그인 제거하기
    - 보안이 매우 빡세서 그냥 제거해주는게 편함
@@ -870,6 +873,7 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
 6. `curl -XGET http://localhost:9200/_cat/indices?v`를 실행해서 timelog가 잘 들어왔는지 확인
 
 ### Open Dashboard(Kibana)로 로그 시각화하기
+#### Open Dashboard 설치하기
 1. Open Dashboard 설치하기
    - `wget https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/2.4.0/opensearch-dashboards-2.4.0-linux-x64.tar.gz`
    - `tar -zxf opensearch-dashboards-2.4.0-linux-x64.tar.gz`
@@ -904,31 +908,93 @@ mv mysql-connector-java-8.0.21.jar $SQOOP_HOME/lib
    - 맨처음부터 지금까지 켜져있는 서버창과 대시보드 창이 같이 있어야함
 6. 구글새탭에 `퍼블릭 aws dns:5601`를 입력
 
-### Open Dashboard 에서 인덱스 패턴 생성하기
+#### Open Dashboard 에서 인덱스 패턴 생성하기
 새로운 인덱스를 만들기 전에 항상 새로고침 해주는건 권장함
 
-#### 인덱스 만들기(json-timelog*)
+#### Open Dashboard 에서 인덱스 패턴 생성하기
+##### 인덱스 만들기(json-timelog*)
 1. 왼족 햄버거 누르기
 2. Management -> Stack Management
 3. Create index pattern
 4. json-timelog* 클릭후 timestamp(시계열)지정
 5. refresh해주고 다시 Stack Management클릭하면 인덱스가 나오는 것을 볼 수 있음
 
-#### discover
+#### Open Dashboard에서 검색하기
+
+##### discover
 - timelog와 같이 시계열 데이터의 경우에는 자동으로 시각화해서 보여줌
 - 달력 옆에 클릭하면 Absolute, Relative가 나옴
   - Absolute: 절대적인시간
   - Relative: 현재시간 기준 상대적인 시간
   
-#### visualization(시각화)
+##### visualization(시각화)
 1. Create new visulization
 2. 원하는 데이터 선택
 3. 개수를 보고싶을때 terms만 기억하면 됨
 4. 이것저것 만져보고 오른쪽 위 save 클릭!
 
-#### Dashboard
+##### Dashboard
 시각화의 결과를 기반으로 간단한 대시보드를 만ㄷ르 수 잇음
 - 특히 시각화해서 저장한 파일을 여러개 가져와서 나열할수 있음
 - 다른사람들과 공유도 할 수 있음(PDF, PNG)
   - SHARE : 다름사람에게 대시보드를 공유하고 싶을때, 
 
+## Spark
+`(base) ubuntu@ip-172-31-11-147:~$ conda activate spark-env`를 통해 (spark-env)환경에서 시작함
+
+### 스파크 설치
+1. 스파크 설치
+   - `wget https://archive.apache.org/dist/spark/spark-3.2.4/spark-3.2.4-bin-hadoop3.2.tgz`
+   - `tar xvfz spark-3.2.4-bin-hadoop3.2.tgz`
+2. 폴더의 이름 바꿔주기
+   - `mv spark-3.2.4-bin-hadoop3.2/ spark-3.2.4/`
+3. 환경변수 설정
+   - `vi ~/.bashrc `
+   - 아래 코드 등록
+      ```
+      # SPARK
+      export SPARK_HOME=/home/ubuntu/spark-3.2.4
+      export PATH=$PATH:$SPARK_HOME/bin
+      ```
+   - 저장후 나오기
+   - `source ~/.bashrc`실행
+   - `echo $SPARK_HOME`로 잘 설치되었는지 확인
+4. `conda activate spark-env`를 실행해서 다시 (spark-env)만들어주기
+5. `pip install pyspark==3.2.4` 설치
+6. `which python`실행 후 나온 결과 나중에 사용하니 메모!
+   - /home/ubuntu/miniconda3/envs/spark-env/bin/python
+   - 아래처럼 사용할거임
+      ```xml
+      export PYSPARK_PYTHON=/home/ubuntu/miniconda3/envs/spark-env/bin/python
+      export PYSPARK_DRIVER_PYTHON=/home/ubuntu/miniconda3/envs/spark-env/bin/python
+      ```
+7. spark 실행환경을 조절할수 있는파일 열기
+   - `cp $SPARK_HOME/conf/spark-env.sh.template $SPARK_HOME/conf/spark-env.sh`
+   - `vi $SPARK_HOME/conf/spark-env.sh`
+   - 6번에 메모한 애들 맨 아래에 집어넣기
+8. `pyspark`실행해서 spark version 3.2.4나오는지 확인
+9. `python`에서 에러없는지 확인하고 (spark-env)환경으로 돌아오기
+10. Web UI 주소 변경
+   - `cp $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defaults.conf`
+   - `vim $SPARK_HOME/conf/spark-defaults.conf`
+   - 맨 아래에 아래 코드 집어넣기
+      - `spark.driver.host 0.0.0.0`
+   - 저장후 나오기
+11. `pyspark` 실행해서 스파크 서버 켜주기
+12. 구글 탭에 `aws 퍼블릭dns:4040`을 입력해 pysparkshell이 잘 나오는지 확인
+13. 쥬피터 노트북도 (spark-env)환경에서 `jupyter notebook --allow-root`를 실행해주기
+    - 앞으로 모든 코드입력 및 데이터 분석은 spark juypter notebook에서 할거임
+    - 구글 탭에 `aws 퍼블릭dns:8888`해서 쥬피터 창 켜주기
+
+
+### spark_jupyter 실행법
+항상 주피터 환경에서 실행!
+1. bash에 접속 후 `cd .`
+2. `ssh -i "V-lab.pem" ubuntu@ec2-3-114-30-206.ap-northeast-1.compute.amazonaws.com`로 (base)환경 들어가기
+3. `conda activate spark-env`를 통해 (spark-env)가상환경 들어가기
+4. `pyspark`로 스파크 서버 키기
+5. 구글 탭에  `aws 퍼블릭dns:4040`을 입력해 스파크 홈페이지키기
+6. 새로운 Bash창 오픈
+7. 1~3번과정 다시하기
+8. (spark-env)환경에서 `jupyter notebook --allow-root`실행
+9. 구글 탭에  `aws 퍼블릭dns:8888`을 입력해 쥬피터노트북키기
